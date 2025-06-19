@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Sistema de Mantenimiento de Bombas Warman
 
 Aplicación web desarrollada con Flask para gestionar el mantenimiento de bombas Warman.
@@ -20,3 +21,7 @@ Aplicación web desarrollada con Flask para gestionar el mantenimiento de bombas
 - Flask
 - SQLite
 - Pandas
+=======
+# Mantenimiento
+Mantenimiento de bombas centrifugas en minería
+>>>>>>> f552c606ec28d682f31d53bebc8bf1afe90bb954
