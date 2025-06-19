@@ -1,0 +1,18 @@
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Base de datos SQLite (opcional, si quieres incluirla en el repositorio, quita esta línea)
+# mantenimiento.db
+
+# Archivos subidos por usuarios
+uploads/*
+!uploads/.gitkeep
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
