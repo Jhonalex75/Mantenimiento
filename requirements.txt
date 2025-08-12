@@ -1,4 +1,13 @@
-flask==2.0.1
-werkzeug==2.0.1
-pandas==1.3.3
-openpyxl==3.0.9
+# Requisitos base para proyectos de ingeniería con Python
+numpy
+scipy
+sympy
+pandas
+matplotlib
+plotly
+pytest
+black
+flake8
+# Para apps web simples (descomentar si aplica)
+# flask
+# streamlit
