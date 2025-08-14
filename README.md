@@ -4,18 +4,20 @@ Aplicación web para la gestión de mantenimiento de activos, registro de fallas
 
 ## Características
 
-- Gestión de activos (equipos, maquinaria, etc.)
-- Registro y seguimiento de fallas
-- Creación y gestión de órdenes de trabajo
-- Cálculo automático de KPIs (MTBF, MTTR, Disponibilidad)
-- Interfaz web intuitiva
-- Filtros avanzados para búsquedas
-- Exportación de informes
+- **Gestión de Activos**: Registro y seguimiento detallado de equipos y maquinaria
+- **Sistema de Fallas**: Reporte y seguimiento de fallas con estados personalizables
+- **Órdenes de Trabajo**: Creación, asignación y seguimiento de tareas de mantenimiento
+- **Métricas Avanzadas**: Cálculo automático de KPIs (MTBF, MTTR, Disponibilidad)
+- **Interfaz Moderna**: Diseño responsivo con Bootstrap 5
+- **API RESTful**: Endpoints para integración con otros sistemas
+- **Autenticación**: Sistema de usuarios y roles
+- **Exportación de Datos**: Generación de informes en múltiples formatos
 
 ## Requisitos
 
 - Python 3.8 o superior
 - pip (gestor de paquetes de Python)
+- Git (para control de versiones)
 
 ## Instalación
 
@@ -108,13 +110,82 @@ La aplicación calcula automáticamente los siguientes KPIs:
 - **MTTR** (Mean Time To Repair): Tiempo medio para reparar
 - **Disponibilidad**: \( A = \dfrac{MTBF}{MTBF + MTTR} \)
 
+## Flujo de Trabajo con Git
+
+### Para contribuir al proyecto:
+
+1. **Haz un fork** del repositorio
+2. **Clona tu fork** localmente:
+   ```bash
+   git clone https://github.com/tu-usuario/mantenimiento.git
+   cd mantenimiento
+   ```
+
+3. **Configura el repositorio remoto**:
+   ```bash
+   git remote add upstream https://github.com/Jhonalex75/mantenimiento.git
+   ```
+
+4. **Crea una rama** para tu característica o corrección:
+   ```bash
+   git checkout -b nombre-de-tu-rama
+   ```
+
+5. **Haz commit** de tus cambios con mensajes descriptivos:
+   ```bash
+   git add .
+   git commit -m "feat: Añade nueva funcionalidad"
+   ```
+
+6. **Sincroniza** con el repositorio principal:
+   ```bash
+   git fetch upstream
+   git rebase upstream/main
+   ```
+
+7. **Sube** tus cambios a tu fork:
+   ```bash
+   git push origin nombre-de-tu-rama
+   ```
+
+8. **Abre un Pull Request** en GitHub
+
+### Convención de Commits
+
+- `feat:` Nueva característica
+- `fix:` Corrección de errores
+- `docs:` Cambios en la documentación
+- `style:` Cambios de formato (puntos y comas, indentación, etc.)
+- `refactor:` Cambios que no corrigen errores ni agregan funcionalidades
+- `test:` Añadir o modificar pruebas
+- `chore:` Cambios en el proceso de construcción o herramientas auxiliares
+
+## Estructura del Código
+
+La aplicación sigue la estructura de paquetes de Python con el patrón Factory de Flask:
+
+- `src/mantenimiento/` - Paquete principal
+  - `__init__.py` - Fábrica de la aplicación
+  - `app.py` - Configuración de la aplicación
+  - `routes/` - Módulos de rutas (blueprints)
+  - `models/` - Modelos de datos
+  - `utils/` - Utilidades y lógica de negocio
+  - `static/` - Archivos estáticos
+  - `templates/` - Plantillas HTML
+
 ## Licencia
 
 Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
 
 ## Contribución
 
-Las contribuciones son bienvenidas. Por favor, lee las guías de contribución antes de enviar un pull request.
+Las contribuciones son bienvenidas. Por favor, sigue estos pasos:
+
+1. Revisa los issues abiertos o crea uno nuevo
+2. Haz fork del repositorio
+3. Crea una rama con tu característica o corrección
+4. Asegúrate de que los tests pasen
+5. Envía un Pull Request con una descripción clara
 
 ## Contacto
 
