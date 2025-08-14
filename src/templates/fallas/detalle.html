@@ -1,0 +1,585 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Falla #{{ falla.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            Falla #{{ falla.id }}
+            <span class="badge bg-{{ 'secondary' if falla.estado == 'reportada' else 'primary' if falla.estado == 'en_proceso' else 'success' if falla.estado == 'resuelta' else 'dark' }} ms-2">
+                {{ falla.estado|replace('_', ' ')|title }}
+            </span>
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('listar_fallas') }}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i> Volver al Listado
+            </a>
+            <a href="{{ url_for('editar_falla', id=falla.id) }}" class="btn btn-warning me-2">
+                <i class="fas fa-edit me-1"></i> Editar
+            </a>
+            {% if falla.estado != 'cerrada' %}
+            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#crearOrdenModal">
+                <i class="fas fa-wrench me-1"></i> Crear Orden
+            </button>
+            {% endif %}
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#eliminarFallaModal">
+                <i class="fas fa-trash-alt me-1"></i> Eliminar
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <!-- Basic Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Información de la Falla
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="card-title">
+                                <a href="{{ url_for('detalle_activo', id=falla.activo_id) }}">
+                                    {{ falla.activo_nombre }}
+                                </a>
+                            </h5>
+                            <p class="card-text">
+                                <strong>Área:</strong> {{ falla.area }}<br>
+                                <strong>Ubicación:</strong> {{ falla.ubicacion }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <strong>Prioridad:</strong>
+                                <span class="badge bg-{{ 'success' if falla.prioridad == 'baja' else 'info' if falla.prioridad == 'media' else 'warning' if falla.prioridad == 'alta' else 'danger' }}">
+                                    {{ falla.prioridad|title }}
+                                </span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Reportada por:</strong> {{ falla.reportada_por }}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Fecha de reporte:</strong> {{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') }}
+                            </div>
+                            {% if falla.fecha_cierre %}
+                            <div class="mb-2">
+                                <strong>Fecha de cierre:</strong> {{ falla.fecha_cierre.strftime('%d/%m/%Y %H:%M') }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mt-3">
+                        <h6>Descripción:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            {{ falla.descripcion|nl2br }}
+                        </div>
+                    </div>
+                    
+                    <!-- Root Cause -->
+                    {% if falla.causa_raiz %}
+                    <div class="mt-3">
+                        <h6>Causa Raíz:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            {{ falla.causa_raiz|nl2br }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Corrective Actions -->
+                    {% if falla.acciones_correctivas %}
+                    <div class="mt-3">
+                        <h6>Acciones Correctivas:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            {{ falla.acciones_correctivas|nl2br }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="fallaTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="ordenes-tab" data-bs-toggle="tab" data-bs-target="#ordenes" type="button" role="tab" aria-controls="ordenes" aria-selected="true">
+                        <i class="fas fa-tasks me-1"></i> Órdenes de Trabajo
+                        {% if falla.ordenes %}
+                        <span class="badge bg-primary rounded-pill">{{ falla.ordenes|length }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="documentos-tab" data-bs-toggle="tab" data-bs-target="#documentos" type="button" role="tab" aria-controls="documentos" aria-selected="false">
+                        <i class="fas fa-file-alt me-1"></i> Documentos Adjuntos
+                        {% if falla.documentos %}
+                        <span class="badge bg-primary rounded-pill">{{ falla.documentos|length }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="comentarios-tab" data-bs-toggle="tab" data-bs-target="#comentarios" type="button" role="tab" aria-controls="comentarios" aria-selected="false">
+                        <i class="fas fa-comments me-1"></i> Comentarios
+                        {% if falla.comentarios %}
+                        <span class="badge bg-primary rounded-pill">{{ falla.comentarios|length }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab" aria-controls="historial" aria-selected="false">
+                        <i class="fas fa-history me-1"></i> Historial
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="fallaTabsContent">
+                <!-- Work Orders Tab -->
+                <div class="tab-pane fade show active" id="ordenes" role="tabpanel" aria-labelledby="ordenes-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            {% if falla.ordenes %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Tipo</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Fecha Inicio</th>
+                                            <th>Fecha Fin</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for orden in falla.ordenes %}
+                                        <tr>
+                                            <td>#{{ orden.id }}</td>
+                                            <td>{{ orden.tipo|title }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'secondary' if orden.estado == 'pendiente' else 'info' if orden.estado == 'en_progreso' else 'success' if orden.estado == 'completada' else 'warning' }}">
+                                                    {{ orden.estado|replace('_', ' ')|title }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if orden.prioridad == 'baja' else 'info' if orden.prioridad == 'media' else 'warning' if orden.prioridad == 'alta' else 'danger' }}">
+                                                    {{ orden.prioridad|title }}
+                                                </span>
+                                            </td>
+                                            <td>{{ orden.fecha_inicio.strftime('%d/%m/%Y') if orden.fecha_inicio else 'N/A' }}</td>
+                                            <td>{{ orden.fecha_fin.strftime('%d/%m/%Y') if orden.fecha_fin else 'En progreso' }}</td>
+                                            <td>
+                                                <a href="{{ url_for('detalle_orden_trabajo', id=orden.id) }}" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Ver Detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No hay órdenes de trabajo asociadas a esta falla.</p>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearOrdenModal">
+                                    <i class="fas fa-plus me-1"></i> Crear Orden de Trabajo
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents Tab -->
+                <div class="tab-pane fade" id="documentos" role="tabpanel" aria-labelledby="documentos-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
+                                <i class="fas fa-upload me-1"></i> Subir Documento
+                            </button>
+                            
+                            {% if falla.documentos %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Tipo</th>
+                                            <th>Tamaño</th>
+                                            <th>Subido por</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for doc in falla.documentos %}
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-{{ 'file-pdf' if doc.tipo == 'pdf' else 'file-word' if doc.tipo in ['doc', 'docx'] else 'file-excel' if doc.tipo in ['xls', 'xlsx'] else 'file-image' if doc.tipo in ['jpg', 'jpeg', 'png', 'gif'] else 'file-alt' }} me-2"></i>
+                                                {{ doc.nombre }}
+                                            </td>
+                                            <td>{{ doc.tipo|upper }}</td>
+                                            <td>{{ doc.tamanho }}</td>
+                                            <td>{{ doc.subido_por }}</td>
+                                            <td>{{ doc.fecha_subida.strftime('%d/%m/%Y') }}</td>
+                                            <td>
+                                                <a href="{{ doc.url }}" class="btn btn-sm btn-primary" download data-bs-toggle="tooltip" title="Descargar">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar" onclick="confirmarEliminarDocumento({{ doc.id }})">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No hay documentos adjuntos.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Tab -->
+                <div class="tab-pane fade" id="comentarios" role="tabpanel" aria-labelledby="comentarios-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="formComentario" class="mb-4">
+                                <div class="form-group">
+                                    <label for="nuevoComentario" class="form-label">Nuevo Comentario</label>
+                                    <textarea class="form-control" id="nuevoComentario" rows="3" placeholder="Escribe tu comentario aquí..." required></textarea>
+                                </div>
+                                <div class="mt-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-1"></i> Enviar Comentario
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <hr>
+                            
+                            <div id="listaComentarios">
+                                {% if falla.comentarios %}
+                                    {% for comentario in falla.comentarios|sort(attribute='fecha', reverse=true) %}
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                        {{ comentario.usuario[0]|upper }}
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ comentario.usuario }}</h6>
+                                                        <small class="text-muted">{{ comentario.fecha.strftime('%d/%m/%Y %H:%M') }}</small>
+                                                    </div>
+                                                </div>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li><a class="dropdown-item" href="#">Editar</a></li>
+                                                        <li><a class="dropdown-item text-danger" href="#">Eliminar</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                {{ comentario.texto|nl2br }}
+                                            </div>
+                                            {% if comentario.archivos %}
+                                            <div class="mt-2">
+                                                {% for archivo in comentario.archivos %}
+                                                <a href="#" class="badge bg-light text-dark text-decoration-none me-1">
+                                                    <i class="fas fa-paperclip me-1"></i> {{ archivo.nombre }}
+                                                </a>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="tab-pane fade" id="historial" role="tabpanel" aria-labelledby="historial-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="timeline">
+                                {% for evento in falla.historial|sort(attribute='fecha', reverse=true) %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker">
+                                        <i class="fas fa-{{ 'check-circle' if evento.tipo == 'estado' and evento.nuevo_valor == 'resuelta' else 'exclamation-circle' if evento.tipo == 'prioridad' and evento.nuevo_valor == 'alta' else 'info-circle' }}"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <p class="mb-1">
+                                            <strong>{{ evento.usuario }}</strong> 
+                                            {% if evento.tipo == 'estado' %}
+                                                cambió el estado de 
+                                                <span class="badge bg-secondary">{{ evento.valor_anterior|replace('_', ' ')|title if evento.valor_anterior else 'N/A' }}</span> 
+                                                a 
+                                                <span class="badge bg-primary">{{ evento.nuevo_valor|replace('_', ' ')|title if evento.nuevo_valor else 'N/A' }}</span>
+                                            {% elif evento.tipo == 'prioridad' %}
+                                                cambió la prioridad de 
+                                                <span class="badge bg-secondary">{{ evento.valor_anterior|title if evento.valor_anterior else 'N/A' }}</span> 
+                                                a 
+                                                <span class="badge bg-{{ 'success' if evento.nuevo_valor == 'baja' else 'info' if evento.nuevo_valor == 'media' else 'warning' if evento.nuevo_valor == 'alta' else 'danger' }}">
+                                                    {{ evento.nuevo_valor|title if evento.nuevo_valor else 'N/A' }}
+                                                </span>
+                                            {% else %}
+                                                {{ evento.descripcion }}
+                                            {% endif %}
+                                        </p>
+                                        <small class="text-muted">
+                                            <i class="far fa-clock me-1"></i> {{ evento.fecha.strftime('%d/%m/%Y %H:%M') }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No hay registro de cambios.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-cogs me-1"></i>
+                    Estado de la Falla
+                </div>
+                <div class="card-body">
+                    <form id="formEstadoFalla">
+                        <div class="mb-3">
+                            <label for="estadoFalla" class="form-label">Estado Actual</label>
+                            <select class="form-select" id="estadoFalla" name="estado" {% if falla.estado == 'cerrada' %}disabled{% endif %}>
+                                <option value="reportada" {% if falla.estado == 'reportada' %}selected{% endif %}>Reportada</option>
+                                <option value="en_proceso" {% if falla.estado == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                                <option value="resuelta" {% if falla.estado == 'resuelta' %}selected{% endif %}>Resuelta</option>
+                                {% if falla.estado != 'cerrada' %}
+                                <option value="cerrada" {% if falla.estado == 'cerrada' %}selected{% endif %}>Cerrada</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="mb-3" id="fechaResolucionContainer" style="display: none;">
+                            <label for="fechaResolucion" class="form-label">Fecha de Resolución</label>
+                            <input type="datetime-local" class="form-control" id="fechaResolucion" name="fecha_resolucion" value="{{ now.strftime('%Y-%m-%dT%H:%M') }}">
+                        </div>
+                        <div class="mb-3" id="comentarioEstadoContainer">
+                            <label for="comentarioEstado" class="form-label">Comentario (Opcional)</label>
+                            <textarea class="form-control" id="comentarioEstado" name="comentario" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" {% if falla.estado == 'cerrada' %}disabled{% endif %}>
+                            <i class="fas fa-save me-1"></i> Actualizar Estado
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Assignment Card -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-users me-1"></i> Asignación</span>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#asignarTecnicoModal">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if falla.asignado_a %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                            {{ falla.asignado_a_nombre[0]|upper }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ falla.asignado_a_nombre }}</h6>
+                            <small class="text-muted">{{ falla.asignado_a_rol }}</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>Asignado el {{ falla.fecha_asignacion.strftime('%d/%m/%Y') if falla.fecha_asignacion else 'N/A' }}</span>
+                        <span>{{ falla.dias_asignado }} días</span>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-user-tie fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No hay técnico asignado</p>
+                        <button class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#asignarTecnicoModal">
+                            <i class="fas fa-user-plus me-1"></i> Asignar Técnico
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Time Tracking Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="far fa-clock me-1"></i>
+                    Tiempos
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Reportada</span>
+                            <span class="text-muted">{{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </li>
+                        {% if falla.fecha_asignacion %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Asignada</span>
+                            <span class="text-muted">{{ falla.fecha_asignacion.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Tiempo de Respuesta</span>
+                            <span class="badge bg-{{ 'success' if falla.tiempo_respuesta_horas <= 4 else 'warning' if falla.tiempo_respuesta_horas <= 24 else 'danger' }}">
+                                {{ falla.tiempo_respuesta }}
+                            </span>
+                        </li>
+                        {% endif %}
+                        {% if falla.fecha_resolucion %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Resuelta</span>
+                            <span class="text-muted">{{ falla.fecha_resolucion.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Tiempo de Resolución</span>
+                            <span class="badge bg-{{ 'success' if falla.tiempo_resolucion_horas <= 24 else 'warning' if falla.tiempo_resolucion_horas <= 72 else 'danger' }}">
+                                {{ falla.tiempo_resolucion }}
+                            </span>
+                        </li>
+                        {% endif %}
+                        {% if falla.fecha_cierre %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Cerrada</span>
+                            <span class="text-muted">{{ falla.fecha_cierre.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </li>
+                        {% endif %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Días Abierta</span>
+                            <span class="badge bg-{{ 'success' if falla.dias_abierta <= 3 else 'warning' if falla.dias_abierta <= 7 else 'danger' }}">
+                                {{ falla.dias_abierta }} días
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Metadata Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Información Adicional
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>ID</th>
+                            <td>#{{ falla.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Categoría</th>
+                            <td>{{ falla.categoria|default('No especificada', true) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Subcategoría</th>
+                            <td>{{ falla.subcategoria|default('No especificada', true) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Reportada por</th>
+                            <td>{{ falla.reportada_por }}</td>
+                        </tr>
+                        <tr>
+                            <th>Departamento</th>
+                            <td>{{ falla.departamento|default('No especificado', true) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de creación</th>
+                            <td>{{ falla.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Última actualización</th>
+                            <td>{{ falla.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        {% if falla.etiquetas %}
+                        <tr>
+                            <th>Etiquetas</th>
+                            <td>
+                                {% for etiqueta in falla.etiquetas %}
+                                <span class="badge bg-secondary me-1">{{ etiqueta }}</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Work Order Modal -->
+<div class="modal fade" id="crearOrdenModal" tabindex="-1" aria-labelledby="crearOrdenModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crearOrdenModalLabel">Crear Orden de Trabajo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formCrearOrden" action="{{ url_for('crear_orden_desde_falla', falla_id=falla.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="tipoOrden" class="form-label">Tipo de Orden</label>
+                        <select class="form-select" id="tipoOrden" name="tipo" required>
+                            <option value="">Seleccione un tipo</option>
+                            <option value="correctivo">Correctivo</option>
+                            <option value="preventivo">Preventivo</option>
+                            <option value="predictivo">Predictivo</option>
+                            <option value="inspeccion">Inspección</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcionOrden" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcionOrden" name="descripcion" rows="3" required>{{ falla.descripcion }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="prioridadOrden" class="form-label">Prioridad</label>
+                                <select class="form-select" id="prioridadOrden" name="prioridad" required>
+                                    <option value="baja" {% if falla.prioridad == 'baja' %}selected{% endif %}>Baja</option>
+                                    <option value="media" {% if falla.prioridad == 'media' %}selected{% endif %}>Media</option>
+                                    <option value="alta" {% if falla.prioridad == 'alta' %}selected{% endif %}>Alta</option>
+                                    <option value="critica" {% if falla.prioridad == 'critica' %}selected{% endif %}>Crítica</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fechaRequerida" class="form-label">Fecha Requerida</label>
+                                <input type="date" class="form-control" id="fechaRequerida" name="fecha_requerida"

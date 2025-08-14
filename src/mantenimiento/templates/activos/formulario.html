@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}{% if activo and activo.activo_id %}Editar Activo{% else %}Nuevo Activo{% endif %} - Sistema de Gestión de Mantenimiento{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-cube me-2"></i>{% if activo and activo.activo_id %}Editar Activo{% else %}Nuevo Activo{% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('listar_activos') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Volver a la lista
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-2"></i>Información Básica
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% if activo and activo.activo_id %}{{ url_for('editar_activo', activo_id=activo.activo_id) }}{% else %}{{ url_for('nuevo_activo') }}{% endif %}" id="formActivo">
+                        <!-- ID oculto para edición -->
+                        {% if activo and activo.activo_id %}
+                        <input type="hidden" name="activo_id" value="{{ activo.activo_id }}">
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="nombre" class="form-label">Nombre del Activo <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" 
+                                       value="{{ activo.nombre if activo else '' }}" required>
+                                <div class="form-text">Ej: Compresor de Aire, Torre de Enfriamiento, etc.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="codigo" class="form-label">Código de Identificación</label>
+                                <input type="text" class="form-control" id="codigo" name="codigo" 
+                                       value="{{ activo.codigo if activo and activo.codigo else '' }}">
+                                <div class="form-text">Código único de identificación (opcional)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="tipo" class="form-label">Tipo de Activo</label>
+                                <select class="form-select" id="tipo" name="tipo">
+                                    <option value="">Seleccionar tipo...</option>
+                                    <option value="Máquina" {% if activo and activo.tipo == 'Máquina' %}selected{% endif %}>Máquina</option>
+                                    <option value="Equipo" {% if activo and activo.tipo == 'Equipo' %}selected{% endif %}>Equipo</option>
+                                    <option value="Herramienta" {% if activo and activo.tipo == 'Herramienta' %}selected{% endif %}>Herramienta</option>
+                                    <option value="Vehículo" {% if activo and activo.tipo == 'Vehículo' %}selected{% endif %}>Vehículo</option>
+                                    <option value="Infraestructura" {% if activo and activo.tipo == 'Infraestructura' %}selected{% endif %}>Infraestructura</option>
+                                    <option value="Otro" {% if activo and activo.tipo == 'Otro' %}selected{% endif %}>Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="marca" class="form-label">Marca</label>
+                                <input type="text" class="form-control" id="marca" name="marca" 
+                                       value="{{ activo.marca if activo and activo.marca else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="modelo" class="form-label">Modelo</label>
+                                <input type="text" class="form-control" id="modelo" name="modelo" 
+                                       value="{{ activo.modelo if activo and activo.modelo else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="numero_serie" class="form-label">Número de Serie</label>
+                                <input type="text" class="form-control" id="numero_serie" name="numero_serie" 
+                                       value="{{ activo.numero_serie if activo and activo.numero_serie else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="fecha_compra" class="form-label">Fecha de Compra/Instalación</label>
+                                <input type="date" class="form-control" id="fecha_compra" name="fecha_compra" 
+                                       value="{{ activo.fecha_compra.strftime('%Y-%m-%d') if activo and activo.fecha_compra else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vida_util_anios" class="form-label">Vida Útil (años)</label>
+                                <input type="number" class="form-control" id="vida_util_anios" name="vida_util_anios" 
+                                       min="0" step="0.5" 
+                                       value="{{ activo.vida_util_anios if activo and activo.vida_util_anios is not none else '5' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="ubicacion" class="form-label">Ubicación <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="ubicacion" name="ubicacion" 
+                                       value="{{ activo.ubicacion if activo and activo.ubicacion else '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="responsable" class="form-label">Responsable</label>
+                                <input type="text" class="form-control" id="responsable" name="responsable" 
+                                       value="{{ activo.responsable if activo and activo.responsable else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="estado" class="form-label">Estado Actual <span class="text-danger">*</span></label>
+                                <select class="form-select" id="estado" name="estado" required>
+                                    <option value="Operativo" {% if activo and activo.estado == 'Operativo' %}selected{% endif %}>Operativo</option>
+                                    <option value="En Mantenimiento" {% if activo and activo.estado == 'En Mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                                    <option value="Fuera de Servicio" {% if activo and activo.estado == 'Fuera de Servicio' %}selected{% endif %}>Fuera de Servicio</option>
+                                    <option value="Dado de Baja" {% if activo and activo.estado == 'Dado de Baja' %}selected{% endif %}>Dado de Baja</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="criticidad" class="form-label">Nivel de Criticidad <span class="text-danger">*</span></label>
+                                <select class="form-select" id="criticidad" name="criticidad" required>
+                                    <option value="Alta" {% if activo and activo.criticidad == 'Alta' %}selected{% endif %}>Alta</option>
+                                    <option value="Media" {% if activo and activo.criticidad == 'Media' %}selected{% endif %}>Media</option>
+                                    <option value="Baja" {% if activo and activo.criticidad == 'Baja' %}selected{% endif %}>Baja</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ activo.descripcion if activo and activo.descripcion else '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="requiere_mantenimiento" name="requiere_mantenimiento" 
+                                           {% if activo and activo.requiere_mantenimiento %}checked{% endif %}>
+                                    <label class="form-check-label" for="requiere_mantenimiento">
+                                        Requiere mantenimiento programado
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="mantenimiento_info" style="display: {% if activo and activo.requiere_mantenimiento %}block{% else %}none{% endif %};">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="frecuencia_mantenimiento" class="form-label">Frecuencia de Mantenimiento</label>
+                                    <select class="form-select" id="frecuencia_mantenimiento" name="frecuencia_mantenimiento">
+                                        <option value="">Seleccionar frecuencia...</option>
+                                        <option value="Diario" {% if activo and activo.frecuencia_mantenimiento == 'Diario' %}selected{% endif %}>Diario</option>
+                                        <option value="Semanal" {% if activo and activo.frecuencia_mantenimiento == 'Semanal' %}selected{% endif %}>Semanal</option>
+                                        <option value="Quincenal" {% if activo and activo.frecuencia_mantenimiento == 'Quincenal' %}selected{% endif %}>Quincenal</option>
+                                        <option value="Mensual" {% if activo and activo.frecuencia_mantenimiento == 'Mensual' %}selected{% endif %}>Mensual</option>
+                                        <option value="Bimestral" {% if activo and activo.frecuencia_mantenimiento == 'Bimestral' %}selected{% endif %}>Bimestral</option>
+                                        <option value="Trimestral" {% if activo and activo.frecuencia_mantenimiento == 'Trimestral' %}selected{% endif %}>Trimestral</option>
+                                        <option value="Semestral" {% if activo and activo.frecuencia_mantenimiento == 'Semestral' %}selected{% endif %}>Semestral</option>
+                                        <option value="Anual" {% if activo and activo.frecuencia_mantenimiento == 'Anual' %}selected{% endif %}>Anual</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="proximo_mantenimiento" class="form-label">Próximo Mantenimiento</label>
+                                    <input type="date" class="form-control" id="proximo_mantenimiento" name="proximo_mantenimiento" 
+                                           value="{{ activo.proximo_mantenimiento.strftime('%Y-%m-%d') if activo and activo.proximo_mantenimiento else '' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="procedimiento_mantenimiento" class="form-label">Procedimiento de Mantenimiento</label>
+                                    <textarea class="form-control" id="procedimiento_mantenimiento" name="procedimiento_mantenimiento" rows="3">{{ activo.procedimiento_mantenimiento if activo and activo.procedimiento_mantenimiento else '' }}</textarea>
+                                    <div class="form-text">Describa los pasos para realizar el mantenimiento.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {% if activo and activo.activo_id %}Actualizar Activo{% else %}Guardar Activo{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Tarjeta de información adicional -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-2"></i>Información Adicional
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">Documentos Adjuntos</h6>
+                    <div id="documentosAdjuntos" class="mb-3">
+                        <div class="text-muted small">No hay documentos adjuntos.</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100" id="btnSubirDocumento">
+                        <i class="fas fa-upload me-1"></i> Subir Documento
+                    </button>
+                    <input type="file" id="inputDocumento" style="display: none;">
+                    
+                    <hr>
+                    
+                    <h6 class="card-title">Historial de Cambios</h6>
+                    <div class="small">
+                        {% if activo and activo.activo_id %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Creado:</span>
+                                <span class="text-muted">
+                                    {% if activo.fecha_creacion %}
+                                        {{ activo.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        No disponible
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Última actualización:</span>
+                                <span class="text-muted">
+                                    {% if activo.fecha_actualizacion %}
+                                        {{ activo.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        No disponible
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% else %}
+                            <div class="text-muted">
+                                Los registros de cambios aparecerán después de guardar el activo.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarjeta de estadísticas -->
+            {% if activo and activo.activo_id %}
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>Estadísticas
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>Disponibilidad:</span>
+                            <span class="fw-bold">95.5%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 95.5%;" 
+                                 aria-valuenow="95.5" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>MTBF (horas):</span>
+                            <span class="fw-bold">450</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 75%;" 
+                                 aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>MTTR (horas):</span>
+                            <span class="fw-bold">2.5</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 25%;" 
+                                 aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="#" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-chart-line me-1"></i> Ver Reporte Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mostrar/ocultar sección de mantenimiento según el checkbox
+        const requiereMantenimiento = document.getElementById('requiere_mantenimiento');
+        const mantenimientoInfo = document.getElementById('mantenimiento_info');
+        
+        if (requiereMantenimiento && mantenimientoInfo) {
+            requiereMantenimiento.addEventListener('change', function() {
+                mantenimientoInfo.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        // Manejar la subida de documentos
+        const btnSubirDocumento = document.getElementById('btnSubirDocumento');
+        const inputDocumento = document.getElementById('inputDocumento');
+        
+        if (btnSubirDocumento && inputDocumento) {
+            btnSubirDocumento.addEventListener('click', function() {
+                inputDocumento.click();
+            });
+            
+            inputDocumento.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    // Aquí iría la lógica para subir el archivo
+                    const fileName = this.files[0].name;
+                    const fileSize = (this.files[0].size / 1024).toFixed(2);
+                    
+                    // Simular subida exitosa
+                    const documentosDiv = document.getElementById('documentosAdjuntos');
+                    const nuevoDocumento = document.createElement('div');
+                    nuevoDocumento.className = 'd-flex justify-content-between align-items-center mb-2 p-2 border rounded';
+                    nuevoDocumento.innerHTML = `
+                        <div>
+                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                            <span class="small">${fileName}</span>
+                            <div class="text-muted extra-small">${fileSize} KB</div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-secondary" title="Descargar">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Si es el primer documento, reemplazar el mensaje de "No hay documentos"
+                    if (documentosDiv.firstChild && documentosDiv.firstChild.className === 'text-muted small') {
+                        documentosDiv.innerHTML = '';
+                    }
+                    
+                    documentosDiv.appendChild(nuevoDocumento);
+                    
+                    // Mostrar notificación de éxito
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+                    alertDiv.role = 'alert';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        Documento "${fileName}" subido correctamente.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    
+                    const form = document.getElementById('formActivo');
+                    if (form) {
+                        form.insertBefore(alertDiv, form.firstChild);
+                        
+                        // Desplazarse al principio del formulario para ver la alerta
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                    
+                    // Limpiar el input de archivo
+                    this.value = '';
+                }
+            });
+        }
+        
+        // Validación del formulario
+        const form = document.getElementById('formActivo');
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                let valid = true;
+                
+                // Validar campos requeridos
+                const requiredFields = form.querySelectorAll('[required]');
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        valid = false;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+                
+                // Validar fechas
+                const fechaCompra = document.getElementById('fecha_compra');
+                const proximoMantenimiento = document.getElementById('proximo_mantenimiento');
+                
+                if (fechaCompra.value && proximoMantenimiento.value) {
+                    const fechaInicio = new Date(fechaCompra.value);
+                    const fechaFin = new Date(proximoMantenimiento.value);
+                    
+                    if (fechaFin < fechaInicio) {
+                        proximoMantenimiento.classList.add('is-invalid');
+                        proximoMantenimiento.nextElementSibling.textContent = 'La fecha de próximo mantenimiento no puede ser anterior a la fecha de compra.';
+                        valid = false;
+                    } else {
+                        proximoMantenimiento.classList.remove('is-invalid');
+                    }
+                }
+                
+                if (!valid) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Mostrar mensaje de error general
+                    const errorAlert = document.createElement('div');
+                    errorAlert.className = 'alert alert-danger alert-dismissible fade show mb-4';
+                    errorAlert.role = 'alert';
+                    errorAlert.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Por favor complete correctamente todos los campos requeridos.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    
+                    const firstInvalid = form.querySelector('.is-invalid');
+                    if (firstInvalid) {
+                        form.insertBefore(errorAlert, form.firstChild);
+                        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstInvalid.focus();
+                    }
+                }
+                
+                form.classList.add('was-validated');
+                return valid;
+            });
+        }
+        
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+    
+    // Función para formatear el tamaño del archivo
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Sistema de Gestión de Mantenimiento{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-tachometer-alt me-2"></i>Panel de Control
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <!-- KPI Cards -->
+        <div class="col-md-3">
+            <div class="kpi-card primary">
+                <div class="kpi-icon">
+                    <i class="fas fa-cubes fa-2x"></i>
+                </div>
+                <div class="kpi-value" id="total-activos">0</div>
+                <div class="kpi-label">Activos Registrados</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="kpi-card success">
+                <div class="kpi-icon">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+                <div class="kpi-value" id="activos-operativos">0%</div>
+                <div class="kpi-label">Disponibilidad</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="kpi-card warning">
+                <div class="kpi-icon">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+                <div class="kpi-value" id="fallas-abiertas">0</div>
+                <div class="kpi-label">Fallas Activas</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="kpi-card danger">
+                <div class="kpi-icon">
+                    <i class="fas fa-tools fa-2x"></i>
+                </div>
+                <div class="kpi-value" id="ordenes-pendientes">0</div>
+                <div class="kpi-label">Órdenes Pendientes</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <!-- Gráfico de Fallas por Mes -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-2"></i>Fallas por Mes
+                </div>
+                <div class="card-body">
+                    <canvas id="fallasChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activos por Estado -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>Activos por Estado
+                </div>
+                <div class="card-body">
+                    <canvas id="estadosChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <!-- Últimas Fallas -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-exclamation-triangle me-2"></i>Últimas Fallas
+                    </div>
+                    <a href="{{ url_for('listar_fallas') }}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Activo</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ultimas-fallas">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Próximos Mantenimientos -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-calendar-alt me-2"></i>Próximos Mantenimientos
+                    </div>
+                    <a href="{{ url_for('listar_ordenes_trabajo') }}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Activo</th>
+                                    <th>Tipo</th>
+                                    <th>Programado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proximos-mantenimientos">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Cargar datos del dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obtener datos del dashboard
+        fetch('/api/estadisticas')
+            .then(response => response.json())
+            .then(data => {
+                // Actualizar tarjetas KPI
+                document.getElementById('total-activos').textContent = data.totales.activos;
+                document.getElementById('fallas-abiertas').textContent = data.fallas_abiertas || 0;
+                document.getElementById('ordenes-pendientes').textContent = data.ordenes_pendientes || 0;
+                
+                // Calcular disponibilidad (ejemplo)
+                const disponibilidad = 95.5; // Esto debería venir de la API
+                document.getElementById('activos-operativos').textContent = `${disponibilidad}%`;
+                
+                // Actualizar tablas
+                actualizarUltimasFallas(data.ultimas_fallas || []);
+                actualizarProximosMantenimientos(data.proximos_mantenimientos || []);
+                
+                // Inicializar gráficos
+                inicializarGraficoFallas(data.grafico_fallas || {});
+                inicializarGraficoEstados(data.estados_activos || {});
+            })
+            .catch(error => {
+                console.error('Error al cargar datos del dashboard:', error);
+            });
+    });
+    
+    // Función para actualizar la tabla de últimas fallas
+    function actualizarUltimasFallas(fallas) {
+        const tbody = document.getElementById('ultimas-fallas');
+        
+        if (fallas.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        No se encontraron fallas recientes
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = fallas.map(falla => `
+            <tr>
+                <td>#${falla.falla_id}</td>
+                <td>${falla.nombre_activo || 'Sin asignar'}</td>
+                <td>${new Date(falla.fecha_reporte).toLocaleDateString()}</td>
+                <td>
+                    <span class="badge bg-${getEstadoBadgeClass(falla.estado)}">
+                        ${falla.estado}
+                    </span>
+                </td>
+                <td class="text-end">
+                    <a href="/activos/${falla.activo_id}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    // Función para actualizar la tabla de próximos mantenimientos
+    function actualizarProximosMantenimientos(mantenimientos) {
+        const tbody = document.getElementById('proximos-mantenimientos');
+        
+        if (mantenimientos.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        No hay mantenimientos programados
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = mantenimientos.map(mtto => `
+            <tr>
+                <td>#${mtto.ot_id}</td>
+                <td>${mtto.nombre_activo || 'Sin asignar'}</td>
+                <td>${mtto.tipo}</td>
+                <td>${new Date(mtto.fecha_programada).toLocaleDateString()}</td>
+                <td class="text-end">
+                    <a href="/ordenes-trabajo/${mtto.ot_id}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    // Función auxiliar para obtener la clase CSS del badge según el estado
+    function getEstadoBadgeClass(estado) {
+        const estados = {
+            'Reportada': 'warning',
+            'En Revisión': 'info',
+            'En Reparación': 'primary',
+            'Resuelta': 'success',
+            'Cerrada': 'secondary',
+            'Pendiente': 'warning',
+            'Programada': 'info',
+            'En Proceso': 'primary',
+            'Completada': 'success',
+            'Cancelada': 'danger'
+        };
+        
+        return estados[estado] || 'secondary';
+    }
+    
+    // Inicializar gráfico de fallas por mes
+    function inicializarGraficoFallas(datos) {
+        const ctx = document.getElementById('fallasChart').getContext('2d');
+        
+        // Datos de ejemplo (deberían venir de la API)
+        const labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const data = [12, 19, 8, 15, 10, 12, 15, 18, 14, 10, 8, 5];
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Fallas por Mes',
+                    data: data,
+                    borderColor: 'rgb(41, 128, 185)',
+                    backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    borderWidth: 2,
+                    pointBackgroundColor: 'white',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: {
+                            weight: 'bold',
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            stepSize: 5
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Inicializar gráfico de estados de activos
+    function inicializarGraficoEstados(datos) {
+        const ctx = document.getElementById('estadosChart').getContext('2d');
+        
+        // Datos de ejemplo (deberían venir de la API)
+        const data = {
+            labels: ['Operativo', 'En Mantenimiento', 'Fuera de Servicio', 'Baja'],
+            datasets: [{
+                data: [65, 15, 10, 5],
+                backgroundColor: [
+                    '#2ecc71',
+                    '#3498db',
+                    '#f39c12',
+                    '#e74c3c'
+                ],
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        };
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: {
+                            weight: 'bold',
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%',
+                radius: '90%'
+            }
+        });
+    }
+</script>
+{% endblock %}

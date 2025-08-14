@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if falla else 'Reportar' }} Falla{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ 'Editar' if falla else 'Reportar' }} Falla {% if falla %}#{{ falla.id }}{% endif %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('listar_fallas') }}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i> Cancelar
+            </a>
+            <button type="submit" form="formFalla" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i> {{ 'Guardar Cambios' if falla else 'Guardar Falla' }}
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-edit me-1"></i>
+                    Información Básica
+                </div>
+                <div class="card-body">
+                    <form id="formFalla" method="POST" action="{{ url_for('editar_falla', id=falla.id) if falla else url_for('reportar_falla') }}" enctype="multipart/form-data">
+                        {% if falla %}
+                        <input type="hidden" name="_method" value="PUT">
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="activo_id" class="form-label">Activo <span class="text-danger">*</span></label>
+                                <select class="form-select" id="activo_id" name="activo_id" required {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>
+                                    <option value="">Seleccione un activo</option>
+                                    {% for activo in activos %}
+                                    <option value="{{ activo.id }}" data-area="{{ activo.area }}" data-ubicacion="{{ activo.ubicacion }}" 
+                                        {% if falla and falla.activo_id == activo.id %}selected{% endif %}>
+                                        {{ activo.nombre }} ({{ activo.codigo }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="categoria" class="form-label">Categoría <span class="text-danger">*</span></label>
+                                <select class="form-select" id="categoria" name="categoria" required {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>
+                                    <option value="">Seleccione una categoría</option>
+                                    <option value="mecanica" {% if falla and falla.categoria == 'mecanica' %}selected{% endif %}>Mecánica</option>
+                                    <option value="electrica" {% if falla and falla.categoria == 'electrica' %}selected{% endif %}>Eléctrica</option>
+                                    <option value="electronica" {% if falla and falla.categoria == 'electronica' %}selected{% endif %}>Electrónica</option>
+                                    <option value="hidraulica" {% if falla and falla.categoria == 'hidraulica' %}selected{% endif %}>Hidráulica</option>
+                                    <option value="neumatica" {% if falla and falla.categoria == 'neumatica' %}selected{% endif %}>Neumática</option>
+                                    <option value="otra" {% if falla and falla.categoria == 'otra' %}selected{% endif %}>Otra</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="subcategoria" class="form-label">Subcategoría</label>
+                                <input type="text" class="form-control" id="subcategoria" name="subcategoria" 
+                                    value="{{ falla.subcategoria if falla else '' }}" {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="prioridad" class="form-label">Prioridad <span class="text-danger">*</span></label>
+                                <select class="form-select" id="prioridad" name="prioridad" required {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>
+                                    <option value="baja" {% if falla and falla.prioridad == 'baja' %}selected{% endif %}>Baja</option>
+                                    <option value="media" {% if falla and falla.prioridad == 'media' %}selected{% endif %}>Media</option>
+                                    <option value="alta" {% if falla and falla.prioridad == 'alta' %}selected{% endif %}>Alta</option>
+                                    <option value="critica" {% if falla and falla.prioridad == 'critica' %}selected{% endif %}>Crítica</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" 
+                                value="{{ falla.titulo if falla else '' }}" required 
+                                {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción Detallada <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required 
+                                {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>{{ falla.descripcion if falla else '' }}</textarea>
+                            <div class="form-text">Describa con el mayor detalle posible la falla observada.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sintomas" class="form-label">Síntomas Observados</label>
+                            <textarea class="form-control" id="sintomas" name="sintomas" rows="3" 
+                                {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>{{ falla.sintomas if falla else '' }}</textarea>
+                            <div class="form-text">Describa los síntomas o señales de la falla (ruidos, vibraciones, mensajes de error, etc.)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="causa_raiz" class="form-label">Causa Raíz (Análisis)</label>
+                            <textarea class="form-control" id="causa_raiz" name="causa_raiz" rows="3" 
+                                {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>{{ falla.causa_raiz if falla else '' }}</textarea>
+                            <div class="form-text">Análisis de la causa raíz de la falla (puede completarse más adelante)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="acciones_correctivas" class="form-label">Acciones Correctivas</label>
+                            <textarea class="form-control" id="acciones_correctivas" name="acciones_correctivas" rows="3" 
+                                {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>{{ falla.acciones_correctivas if falla else '' }}</textarea>
+                            <div class="form-text">Acciones tomadas o recomendadas para corregir la falla (puede completarse más adelante)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones Adicionales</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="2" 
+                                {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>{{ falla.observaciones if falla else '' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="etiquetas" class="form-label">Etiquetas</label>
+                            <input type="text" class="form-control" id="etiquetas" name="etiquetas" 
+                                value="{{ falla.etiquetas|join(', ') if falla and falla.etiquetas else '' }}" 
+                                {% if falla and falla.estado == 'cerrada' %}disabled{% endif %}>
+                            <div class="form-text">Separe las etiquetas con comas (ej: motor, eléctrico, urgente)</div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Documentos Adjuntos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-paperclip me-1"></i>
+                    Documentos Adjuntos
+                </div>
+                <div class="card-body">
+                    {% if falla and falla.documentos %}
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Tamaño</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in falla.documentos %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-{{ 'file-pdf' if doc.tipo == 'pdf' else 'file-word' if doc.tipo in ['doc', 'docx'] else 'file-excel' if doc.tipo in ['xls', 'xlsx'] else 'file-image' if doc.tipo in ['jpg', 'jpeg', 'png', 'gif'] else 'file-alt' }} me-1"></i>
+                                        {{ doc.nombre }}
+                                    </td>
+                                    <td>{{ doc.tipo|upper }}</td>
+                                    <td>{{ doc.tamanho }}</td>
+                                    <td>
+                                        <a href="{{ doc.url }}" class="btn btn-sm btn-primary" download>
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% if falla.estado != 'cerrada' %}
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="confirmarEliminarDocumento({{ doc.id }})">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if not falla or falla.estado != 'cerrada' %}
+                    <div class="mb-3">
+                        <label for="documentos" class="form-label">Adjuntar Documentos</label>
+                        <input class="form-control" type="file" id="documentos" name="documentos" multiple>
+                        <div class="form-text">Puede seleccionar múltiples archivos (máx. 10MB por archivo)</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha -->
+        <div class="col-lg-4">
+            <!-- Información del Activo -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Información del Activo
+                </div>
+                <div class="card-body" id="infoActivo">
+                    <div class="text-center text-muted py-4" id="sinActivoSeleccionado">
+                        <i class="fas fa-cube fa-3x mb-3"></i>
+                        <p class="mb-0">Seleccione un activo para ver su información</p>
+                    </div>
+                    <div id="detalleActivo" style="display: none;">
+                        <h5 id="activoNombre" class="card-title"></h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Código:</th>
+                                <td id="activoCodigo"></td>
+                            </tr>
+                            <tr>
+                                <th>Área:</th>
+                                <td id="activoArea"></td>
+                            </tr>
+                            <tr>
+                                <th>Ubicación:</th>
+                                <td id="activoUbicacion"></td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td><span id="activoEstado" class="badge"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Último Mantenimiento:</th>
+                                <td id="activoUltimoMantenimiento"></td>
+                            </tr>
+                            <tr>
+                                <th>Próximo Mantenimiento:</th>
+                                <td id="activoProximoMantenimiento"></td>
+                            </tr>
+                        </table>
+                        <div class="d-grid">
+                            <a href="#" id="verDetalleActivo" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-external-link-alt me-1"></i> Ver Detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado de la Falla -->
+            {% if falla %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-tasks me-1"></i>
+                    Estado de la Falla
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Estado Actual</label>
+                        <p>
+                            <span class="badge bg-{{ 'secondary' if falla.estado == 'reportada' else 'primary' if falla.estado == 'en_proceso' else 'success' if falla.estado == 'resuelta' else 'dark' }}">
+                                {{ falla.estado|replace('_', ' ')|title }}
+                            </span>
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reportada por</label>
+                        <p>{{ falla.reportada_por }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Reporte</label>
+                        <p>{{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    
+                    {% if falla.fecha_cierre %}
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Cierre</label>
+                        <p>{{ falla.fecha_cierre.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if falla.asignado_a %}
+                    <div class="mb-3">
+                        <label class="form-label">Asignado a</label>
+                        <p>{{ falla.asignado_a_nombre }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de Cambios -->
+            {% if falla and falla.historial %}
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history me-1"></i>
+                    Historial de Cambios
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                        {% for evento in falla.historial|sort(attribute='fecha', reverse=true) %}
+                        <div class="list-group-item list-group-item-action
+                            {% if evento.tipo == 'estado' and evento.nuevo_valor == 'cerrada' %}list-group-item-success{% endif %}
+                            {% if evento.tipo == 'prioridad' and evento.nuevo_valor == 'alta' %}list-group-item-danger{% endif %}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    {% if evento.tipo == 'estado' %}
+                                        <i class="fas fa-flag me-1"></i>
+                                    {% elif evento.tipo == 'prioridad' %}
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                    {% else %}
+                                        <i class="fas fa-edit me-1"></i>
+                                    {% endif %}
+                                    {{ evento.titulo }}
+                                </h6>
+                                <small class="text-muted">{{ evento.fecha.strftime('%d/%m %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1 small">{{ evento.descripcion }}</p>
+                            <small class="text-muted">Por {{ evento.usuario }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Mostrar/ocultar información del activo seleccionado
+        const activoSelect = document.getElementById('activo_id');
+        const infoActivo = document.getElementById('infoActivo');
+        const sinActivo = document.getElementById('sinActivoSeleccionado');
+        const detalleActivo = document.getElementById('detalleActivo');
+        const verDetalleBtn = document.getElementById('verDetalleActivo');
+
+        function actualizarInfoActivo() {
+            const selectedOption = activoSelect.options[activoSelect.selectedIndex];
+            
+            if (selectedOption.value) {
+                // Mostrar información del activo seleccionado
+                sinActivo.style.display = 'none';
+                detalleActivo.style.display = 'block';
+                
+                // Actualizar datos del activo
+                document.getElementById('activoNombre').textContent = selectedOption.text.split(' (')[0];
+                document.getElementById('activoCodigo').textContent = selectedOption.value;
+                document.getElementById('activoArea').textContent = selectedOption.dataset.area || 'No especificada';
+                document.getElementById('activoUbicacion').textContent = selectedOption.dataset.ubicacion || 'No especificada';
+                
+                // Actualizar enlace de ver detalles
+                verDetalleBtn.href = `/activos/${selectedOption.value}`;
+            } else {
+                // Ocultar información si no hay activo seleccionado
+                sinActivo.style.display = 'block';
+                detalleActivo.style.display = 'none';
+            }
+        }
+
+        // Cargar información del activo al cambiar la selección
+        if (activoSelect) {
+            activoSelect.addEventListener('change', actualizarInfoActivo);
+            
+            // Cargar información inicial si hay un activo seleccionado
+            if (activoSelect.value) {
+                actualizarInfoActivo();
+            }
+        }
+
+        // Validación del formulario antes de enviar
+        const formFalla = document.getElementById('formFalla');
+        if (formFalla) {
+            formFalla.addEventListener('submit', function(e) {
+                // Validar que se haya seleccionado un activo
+                if (!activoSelect.value) {
+                    e.preventDefault();
+                    alert('Por favor seleccione un activo');
+                    activoSelect.focus();
+                    return false;
+                }
+                
+                // Validar que la categoría esté seleccionada
+                const categoria = document.getElementById('categoria');
+                if (!categoria.value) {
+                    e.preventDefault();
+                    alert('Por favor seleccione una categoría');
+                    categoria.focus();
+                    return false;
+                }
+                
+                // Validar que el título no esté vacío
+                const titulo = document.getElementById('titulo');
+                if (!titulo.value.trim()) {
+                    e.preventDefault();
+                    alert('Por favor ingrese un título para la falla');
+                    titulo.focus();
+                    return false;
+                }
+                
+                // Validar que la descripción no esté vacía
+                const descripcion = document.getElementById('descripcion');
+                if (!descripcion.value.trim()) {
+                    e.preventDefault();
+                    alert('Por favor ingrese una descripción detallada de la falla');
+                    descripcion.focus();
+                    return false;
+                }
+                
+                // Si todo está bien, se envía el formulario
+                return true;
+            });
+        }
+        
+        // Confirmar eliminación de documento
+        window.confirmarEliminarDocumento = function(id) {
+            if (confirm('¿Está seguro de que desea eliminar este documento? Esta acción no se puede deshacer.')) {
+                // Aquí iría la lógica para eliminar el documento
+                console.log('Eliminando documento con ID:', id);
+                // Por ejemplo: fetch(`/api/documentos/${id}`, { method: 'DELETE' })
+                // Luego recargar la página o actualizar la lista de documentos
+            }
+        };
+    });
+</script>
+{% endblock %}

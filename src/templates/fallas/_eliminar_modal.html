@@ -1,0 +1,107 @@
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="eliminarFallaModal" tabindex="-1" aria-labelledby="eliminarFallaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="eliminarFallaModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+                    <h5>¿Está seguro de que desea eliminar esta falla?</h5>
+                    <p class="mb-0">
+                        Esta acción eliminará permanentemente la falla <strong>#{{ falla.id }}</strong> 
+                        y toda su información asociada (comentarios, documentos, etc.).
+                    </p>
+                    <p class="text-danger fw-bold mt-2">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        ¡Esta acción no se puede deshacer!
+                    </p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="fas fa-info-circle mt-1"></i>
+                        </div>
+                        <div>
+                            <strong>¡Atención!</strong> Si esta falla está relacionada con órdenes de trabajo, 
+                            se recomienda cancelar o finalizar dichas órdenes antes de proceder.
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="formEliminarFalla" action="{{ url_for('eliminar_falla', id=falla.id) }}" method="POST">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-3">
+                        <label for="motivoEliminacion" class="form-label">Motivo de la eliminación <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="motivoEliminacion" name="motivo" rows="3" required 
+                                  placeholder="Describa brevemente el motivo de la eliminación"></textarea>
+                        <div class="form-text">Esta información quedará registrada en el historial del sistema.</div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmarEliminacion" required>
+                        <label class="form-check-label" for="confirmarEliminacion">
+                            Entiendo que esta acción no se puede deshacer y acepto eliminar permanentemente esta falla.
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i> Confirmar Eliminación
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para manejar la confirmación de eliminación -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formEliminar = document.getElementById('formEliminarFalla');
+    const confirmCheckbox = document.getElementById('confirmarEliminacion');
+    const submitBtn = formEliminar ? formEliminar.querySelector('button[type="submit"]') : null;
+    
+    if (submitBtn && confirmCheckbox) {
+        // Deshabilitar el botón de envío inicialmente
+        submitBtn.disabled = true;
+        
+        // Habilitar/deshabilitar el botón según el estado del checkbox
+        confirmCheckbox.addEventListener('change', function() {
+            submitBtn.disabled = !this.checked;
+        });
+    }
+    
+    // Validar el formulario antes de enviar
+    if (formEliminar) {
+        formEliminar.addEventListener('submit', function(e) {
+            if (!confirm('¿Está completamente seguro de que desea eliminar esta falla? Esta acción es irreversible.')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Mostrar indicador de carga
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Eliminando...';
+            
+            // Aquí podrías agregar una llamada AJAX para manejar la eliminación
+            // y mostrar retroalimentación al usuario
+            
+            return true;
+        });
+    }
+});
+</script>

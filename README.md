@@ -1,52 +1,126 @@
-# MANTENIMIENTO — Registro, planificación y KPIs (MTBF/MTTR)
+# Sistema de Gestión de Mantenimiento
 
-## Objetivo
-Ofrecer una base para gestionar mantenimiento preventivo/correctivo, registrar fallas, planificar tareas y calcular KPIs (MTBF, MTTR, Disponibilidad) de forma clara y reproducible.
+Aplicación web para la gestión de mantenimiento de activos, registro de fallas, órdenes de trabajo y cálculo de KPIs (MTBF, MTTR, Disponibilidad).
 
-## Conceptos clave
-- **MTBF** (Mean Time Between Failures): tiempo medio entre fallas.
-- **MTTR** (Mean Time To Repair): tiempo medio para reparar.
-- **Disponibilidad**: \( A = \dfrac{MTBF}{MTBF + MTTR} \).
-- Plan preventivo: tareas con periodicidad (horas de operación, calendario).
+## Características
 
-## Estructura sugerida
-- `data/` CSVs: `activos.csv`, `ordenes_trabajo.csv`, `fallas.csv`.
-- `src/` scripts para carga, validación y KPIs.
-- `reports/` salidas (tablas y gráficos).
+- Gestión de activos (equipos, maquinaria, etc.)
+- Registro y seguimiento de fallas
+- Creación y gestión de órdenes de trabajo
+- Cálculo automático de KPIs (MTBF, MTTR, Disponibilidad)
+- Interfaz web intuitiva
+- Filtros avanzados para búsquedas
+- Exportación de informes
 
-## Esquemas de datos (CSV)
-- `activos.csv`: `activo_id, nombre, criticidad, fecha_alta`
-- `ordenes_trabajo.csv`: `ot_id, activo_id, tipo(preventivo|correctivo), fecha_inicio, fecha_fin, duracion_h, estado`
-- `fallas.csv`: `falla_id, activo_id, fecha, tiempo_fuera_servicio_h`
+## Requisitos
 
-## Cálculo de KPIs
-1) MTBF por activo: promedio de diferencias entre fechas de falla consecutivas.
-2) MTTR por activo: promedio de `tiempo_fuera_servicio_h`.
-3) Disponibilidad \(A\) global y por activo.
+- Python 3.8 o superior
+- pip (gestor de paquetes de Python)
 
-## Ejemplo (rápido) con Python
-```bash
-python -m venv .venv && .\.venv\Scripts\activate
-pip install pandas
+## Instalación
+
+1. **Clonar el repositorio**
+   ```bash
+   git clone https://github.com/Jhonalex75/mantenimiento.git
+   cd mantenimiento
+   ```
+
+2. **Crear y activar un entorno virtual (recomendado)**
+   ```bash
+   # Windows
+   python -m venv .venv
+   .\.venv\Scripts\activate
+   
+   # Linux/MacOS
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Instalar dependencias**
+   ```bash
+   pip install -e .
+   ```
+
+## Estructura del proyecto
+
 ```
-```python
-import pandas as pd
+mantenimiento/
+├── data/                   # Datos de ejemplo
+│   ├── activos.csv
+│   ├── fallas.csv
+│   └── ordenes_trabajo.csv
+├── src/
+│   └── mantenimiento/     # Código fuente del paquete
+│       ├── __init__.py    # Inicialización del paquete
+│       ├── app.py         # Aplicación Flask principal
+│       ├── routes.py      # Rutas de la aplicación
+│       ├── models/        # Modelos de datos
+│       │   ├── __init__.py
+│       │   ├── activo.py
+│       │   ├── falla.py
+│       │   └── orden_trabajo.py
+│       └── utils/         # Utilidades
+│           ├── __init__.py
+│           ├── database.py
+│           ├── data_loader.py
+│           └── kpi_calculator.py
+├── templates/             # Plantillas HTML
+│   ├── base.html
+│   ├── index.html
+│   ├── activos/
+│   ├── fallas/
+│   └── ordenes/
+├── static/               # Archivos estáticos (CSS, JS, imágenes)
+├── uploads/              # Archivos subidos por los usuarios
+├── backups/              # Copias de seguridad
+├── setup.py              # Configuración del paquete
+└── README.md             # Este archivo
+```
 
-fallas = pd.DataFrame(
-    {
-        "activo_id": [1,1,1,2,2],
-        "fecha": pd.to_datetime(["2025-01-01","2025-01-10","2025-01-20","2025-01-05","2025-01-25"]),
-        "tiempo_fuera_servicio_h": [3, 2, 4, 1, 2],
-    }
-)
+## Uso
 
-# MTBF por activo
-mtbf = (
-    fallas.sort_values(["activo_id","fecha"]) 
-    .groupby("activo_id")["fecha"]
-    .apply(lambda s: s.diff().dt.total_seconds().dropna()/3600)
-    .groupby(level=0).mean()
-)
+### Iniciar la aplicación
+
+```bash
+# Desde el directorio raíz del proyecto
+python -m mantenimiento
+```
+
+La aplicación estará disponible en `http://127.0.0.1:5000/`
+
+### Cargar datos de ejemplo
+
+1. Inicia la aplicación
+2. Navega a la sección de configuración
+3. Haz clic en "Cargar datos de ejemplo"
+
+### Acceso a la aplicación
+
+- **URL local**: `http://127.0.0.1:5000/`
+- **Usuario por defecto**: admin
+- **Contraseña por defecto**: admin123
+
+## KPIs
+
+La aplicación calcula automáticamente los siguientes KPIs:
+
+- **MTBF** (Mean Time Between Failures): Tiempo medio entre fallas
+- **MTTR** (Mean Time To Repair): Tiempo medio para reparar
+- **Disponibilidad**: \( A = \dfrac{MTBF}{MTBF + MTTR} \)
+
+## Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+
+## Contribución
+
+Las contribuciones son bienvenidas. Por favor, lee las guías de contribución antes de enviar un pull request.
+
+## Contacto
+
+- **Autor**: Jhonalex75
+- **Correo**: tu@email.com
+- **GitHub**: [Jhonalex75](https://github.com/Jhonalex75)
 
 mttr = fallas.groupby("activo_id")["tiempo_fuera_servicio_h"].mean()
 
